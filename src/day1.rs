@@ -4078,14 +4078,14 @@ pub fn part1(input: &str) {
         let step = step.trim();
         let direction = step.chars().next().unwrap();
         let offset: i32 = step[1..].trim().parse().unwrap();
-        println!("{} {}", direction, offset);
+        // println!("{} {}", direction, offset);
         match direction {
             'L' => dial_arrow += 100 - offset,
             'R' => dial_arrow += offset,
             _ => {},
         }
         dial_arrow = dial_arrow % 100;
-        println!("arrow: {}", dial_arrow);
+        // println!("arrow: {}", dial_arrow);
         if dial_arrow == 0 {
             pass += 1;
         }
@@ -4105,44 +4105,43 @@ pub fn part2(input: &str) {
         let step = step.trim();
         let direction = step.chars().next().unwrap();
         let offset: i32 = step[1..].trim().parse().unwrap();
-        let prev_arrow = dial_arrow;
         let mut sum_pass = 0;
         if direction == 'L' {
-            println!("LEFT");
+            // println!("LEFT");
             let mut times_clicked = 0;
             let raw_next = dial_arrow - offset;
-            println!("dial_arrow - offset = raw_next");
-            println!("{} - {} = {}", dial_arrow, offset, raw_next);
+            // println!("dial_arrow - offset = raw_next");
+            // println!("{} - {} = {}", dial_arrow, offset, raw_next);
             if raw_next <= 0 {
-                println!("raw_next is <= 0");
+                // println!("raw_next is <= 0");
                 times_clicked = raw_next / -100;
-                println!("times clicked = {}", times_clicked);
+                // println!("times clicked = {}", times_clicked);
                 sum_pass += times_clicked;
-                if raw_next <= 0 && dial_arrow != 0 {
-                    println!("raw_next <= 0 and dial_arrow != 0. pass + 1");
+                if dial_arrow != 0 {
+                    // println!("raw_next <= 0 and dial_arrow != 0. pass + 1");
                     sum_pass += 1
                 }
             }
             dial_arrow += (100 * (1 + times_clicked)) - offset;
         }
         if direction == 'R' {
-            println!("RIGHT");
+            // println!("RIGHT");
             let raw_next = dial_arrow + offset;
-            println!("dial_arrow + offset = raw_next");
-            println!("{} + {} = {}", dial_arrow, offset, raw_next);
+            // println!("dial_arrow + offset = raw_next");
+            // println!("{} + {} = {}", dial_arrow, offset, raw_next);
             if raw_next >= 100 {
-                println!("raw_next >= 100");
+                // println!("raw_next >= 100");
                 let times_clicked = raw_next / 100;
-                println!("times_clicked = {}. pass + {}", times_clicked, times_clicked);
+                // println!("times_clicked = {}. pass + {}", times_clicked, times_clicked);
                 sum_pass += times_clicked;
             }
             dial_arrow += offset;
         }
         dial_arrow = dial_arrow % 100;
-        println!("{} -> {} {} -> {}", prev_arrow, direction, offset, dial_arrow);
+        // println!("{} -> {} {} -> {}", prev_arrow, direction, offset, dial_arrow);
         pass += sum_pass;
-        println!("*pass: {}", pass);
-        println!("---");
+        // println!("*pass: {}", pass);
+        // println!("---");
     }
 
     println!("pass: {}", pass);
