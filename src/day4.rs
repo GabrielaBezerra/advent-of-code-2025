@@ -150,22 +150,32 @@ pub const INPUT: &str = r#"@@...@@@..@@@@@@@@@..@..@@@@@@.@.@@@..@@@@.@@@@@@@@..
 @..@.@@@@@@.@@@....@..@.@@@@@@.@@@@@.@..@@.@.@@@@@..@@.@.@@.@@@@@@@..@@..@...@@.@...@.@.@@@@@.@@@@@...@@@@@@.@.@.@.@.@@.@@.@@@.@@.@@.@..@@@.
 ...@@@@..@@@.@.@@@.@.@@@@.@@@@@..@@.@@@@..@@.@@..@.@.@.@..@.@@@.@.@@@..@..@@@...@@..@@@..@@@@@@@@@@.@@@.@.@.@..@.@@.@...@..@@....@@@@@@@.@.."#;
 
+const DEBUG_PRINT: bool = false;
+
 struct Grid { content: Vec<Vec<Position>>, kernel_size: i32 }
-struct Position { value: char, enabled: bool, }
+struct Position { value: char, enabled: bool }
 impl Position {
-    fn has_roll(value: char) -> bool {
-        return value == '@';
+    fn has_roll(&self) -> bool {
+        return self.value == '@';
+    }
+
+    fn enable(&mut self) {
+        self.enabled = true;
     }
 
     fn disable(&mut self) {
         self.enabled = false;
+    }
+
+    fn remove(&mut self) {
+        self.value = '.';
     }
 }
 impl Grid {
     fn print_enabled(&self) { 
         for i in 0..self.content.len() {
             for j in 0..self.content[i].len() {
-                if Position::has_roll(self.content[i][j].value) && self.content[i][j].enabled {
+                if self.content[i][j].enabled {
                     print!("x");
                 } else {
                     print!("{}",self.content[i][j].value);
@@ -180,13 +190,13 @@ impl Grid {
 
         for r in 0..self.content.len() {
             for p in 0..self.content[r].len() {
-                let mut enabled = false;
                 let mut rows_near = 4 + 1; // plus itself
-                let position = &self.content[r][p];
-                // println!("position {}",position.value);
-                if !Position::has_roll(position.value) {
+                let position = &mut self.content[r][p];
+                if DEBUG_PRINT { println!("position [{}][{}] = {}", r, p, position.value); }
+                if !position.has_roll() {
                     self.content[r][p].disable();
                 } else {
+                    position.enable();
                     for kx in 0..self.kernel_size {
                         if rows_near <= 0 { break; }
                         for ky in 0..self.kernel_size {
@@ -194,21 +204,46 @@ impl Grid {
                             let y: i32 = p as i32 - kernel_center + ky;
                             if x < self.content.len() as i32 && x >= 0 && y < self.content[r].len() as i32 && y >= 0 {
                                 let neighboor = &self.content[x as usize][y as usize];
-                                // println!("neighboor {}", neighboor.value);
-                                if Position::has_roll(neighboor.value) {
+                                if DEBUG_PRINT { println!("neighboor [{}][{}] = {}", x, y, neighboor.value); }
+                                if neighboor.has_roll() {
                                     rows_near -= 1;
                                 }
                                 if rows_near <= 0 {
                                     self.content[r][p].disable();
+                                    if DEBUG_PRINT { println!("marked for remove"); }
                                     break;
                                 }
                             }
                         }
                     }
                 }
-                // println!("---");
+                if DEBUG_PRINT { println!("---"); }
             }
         }
+    }
+
+    fn remove_enabled_rolls(&mut self) {
+        for r in 0..self.content.len() {
+            for p in 0..self.content[r].len() {
+                if self.content[r][p].enabled {
+                    let position = &mut self.content[r][p];
+                    position.remove();
+                    position.disable();
+                }
+            }
+        }
+    }
+
+    fn total_enabled_rolls(&self) -> i32 {
+        let mut enabled_count: i32 = 0;
+        for r in 0..self.content.len() {
+            for p in 0..self.content.len() {
+                if self.content[r][p].enabled {
+                    enabled_count += 1;
+                }
+            }
+        }
+        return enabled_count;
     }
 }
 
@@ -218,7 +253,8 @@ fn parse_input(input: &str, kernel_size: i32) -> Grid {
     for row in 0..rows.len() {
         grid.content.push(vec![]);
         for position in 0..rows[row].len() {
-            grid.content[row].push(Position { value: rows[row].chars().nth(position).unwrap(), enabled: true });
+            let value = rows[row].chars().nth(position).unwrap();
+            grid.content[row].push(Position { value: value, enabled: value == '@' });
         }
     }
     return grid;
@@ -226,10 +262,28 @@ fn parse_input(input: &str, kernel_size: i32) -> Grid {
 
 pub fn part1(input: &str) {
     let kernel_size = 3;
-    let mut grid = parse_input(input, kernel_size);
-    Grid::check_rolls_enabled_for_access(&mut grid);
-    Grid::print_enabled(&grid);
-    let total = grid.content.into_iter().flat_map(|row| row.into_iter()).filter(|position| position.enabled).count() as i32;
-    println!("\nforklifts can access {} rolls", total);
+    let mut grid: Grid = parse_input(input, kernel_size);
+    grid.check_rolls_enabled_for_access();
+    if DEBUG_PRINT { grid.print_enabled(); }
+    let total = grid.total_enabled_rolls();
+    println!("Forklifts can remove {} rolls", total);
 }
 
+pub fn part2(input: &str) {
+    let kernel_size = 3;
+    let mut grid: Grid = parse_input(input, kernel_size);
+    let mut total: i32;
+    let mut total_removed: i32 = 0;
+    loop {
+        grid.check_rolls_enabled_for_access();
+        if DEBUG_PRINT { grid.print_enabled(); }
+        total = grid.total_enabled_rolls();
+        grid.remove_enabled_rolls();
+        if DEBUG_PRINT { println!("Removed {} rolls or paper", total); }
+        total_removed += total;
+        if total == 0 {
+            break;
+        }
+    }
+    println!("Forklifts can remove {} rolls sequentially", total_removed);
+}
